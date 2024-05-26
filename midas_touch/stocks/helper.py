@@ -7,11 +7,11 @@ import time
 import os
 import re
 
-os.environ["OPENAI_API_KEY"] = 'sk-proj-uNNYED8V34Y2NUgpKjBbT3BlbkFJC6rxi1RrbQdtSZo44XsA'
+api_key = os.environ["OPENAI_API_KEY"]
 
 # gets API Key from environment variable OPENAI_API_KEY
 client = OpenAI(
-    api_key = 'sk-proj-uNNYED8V34Y2NUgpKjBbT3BlbkFJC6rxi1RrbQdtSZo44XsA'
+    api_key = api_key
 )
 
 
