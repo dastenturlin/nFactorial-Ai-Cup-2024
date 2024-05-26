@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Information</title>
+  <style>
+    @keyframes dot-flashing {
+      0% {
+        background-color: #00509E;
+      }
+      50%,
+      100% {
+        background-color: #f0f4f8;
+      }
+    }
+
+    .dot-flashing {
+      position: relative;
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      background-color: #00509E;
+      color: #00509E;
+      animation: dot-flashing 1s infinite linear alternate;
+      animation-delay: .5s;
+    }
+    .dot-flashing::before,
+    .dot-flashing::after {
+      content: '';
+      display: inline-block;
+      position: absolute;
+      top: 0;
+    }
+    .dot-flashing::before {
+      left: -20px;
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      background-color: #00509E;
+      color: #00509E;
+      animation: dot-flashing 1s infinite alternate;
+      animation-delay: 0s;
+    }
+    .dot-flashing::after {
+      left: 20px;
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      background-color: #00509E;
+      color: #00509E;
+      animation: dot-flashing 1s infinite alternate;
+      animation-delay: 1s;
+    }
+
+    body {
+      font-family: 'Helvetica', sans-serif;
+      background-color: #f0f4f8;
+      color: #333;
+      display: flex;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      width: 100%;
+    }
+    .left-tab {
+      width: 10%;
+      border-right: 1px solid #ddd;
+      padding-right: 20px;
+    }
+    .left-tab button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #00509E;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .left-tab button:hover {
+      background-color: #003f7f;
+    }
+    .content {
+      width: 50%;
+      padding-left: 20px;
+    }
+    .search-bar {
+      width: 100%;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #00509E;
+      border-radius: 4px;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    .search-bar button {
+      padding: 10px 20px;
+      background-color: #00509E;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .search-bar button:hover {
+      background-color: #003f7f;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: 20px;
+      margin-top: 20px;
+    }
+    .card {
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      text-align: left;
+      cursor: pointer;
+      position: relative;
+    }
+    .card h3 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #00509E;
+    }
+    .card .markdown-content {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-size: 14px;
+      color: #333;
+    }
+    .card canvas {
+      max-width: 100%;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 8px;
+      max-height: 80%;
+      overflow-y: auto;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .insights {
+      font-size: 20px; /* Increased by two */
+      grid-column: span 2;
+    }
+    .graph-container {
+      width: 40%;
+      padding-left: 20px;
+    }
+    .chat-container {
+      width: 100%;
+      height: 300px; /* Static height */
+      overflow-y: auto;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .chat-placeholder {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: rgba(0, 0, 0, 0.5);
+    }
+    .chat-container .message {
+      margin-bottom: 15px;
+      padding: 10px;
+      border-radius: 20px;
+      line-height: 1.4;
+      display: inline-block;
+    }
+    .chat-container .user-message {
+      background-color: #e0f7fa;
+      align-self: flex-end;
+      text-align: right;
+      margin-left: auto;
+    }
+    .chat-container .bot-message {
+      background-color: #f1f8e9;
+      align-self: flex-start;
+      text-align: left;
+      margin-right: auto;
+    }
+    .chat-input {
+      display: flex;
+      margin-top: 10px;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #00509E;
+      border-radius: 4px;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    .chat-input button {
+      padding: 10px 20px;
+      background-color: #00509E;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .chat-input button:hover {
+      background-color: #003f7f;
+    }
+    .loading {
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    .loading .dot-flashing {
+      margin: 0 auto;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="left-tab">
+      <button onclick="navigate('home')">Home</button>
+      <button onclick="navigate('discover')">Discover</button>
+    </div>
+    <div class="content">
+      <div class="search-bar">
+        <input type="text" id="ticker-input" placeholder="Enter ticker symbol..." oninput="toggleChatContainer()">
+        <button onclick="fetchStockData()">Search</button>
+      </div>
+      <div class="grid">
+        <div class="card" id="news-summary" onclick="openModal('news-summary-modal')">
+          <h3>Weekly News Summary</h3>
+        </div>
+        <div class="card" id="analyst-recommendation" onclick="openModal('analyst-recommendation-modal')">
+          <h3>Analyst Recommendation</h3>
+        </div>
+        <div class="card insights" id="chat-completion">
+          <h3>Insights</h3>
+          <div id="chat-completion-result" class="markdown-content"></div>
+          <div class="loading" id="chat-completion-loading">
+            <div class="dot-flashing"></div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-container" id="chat-container">
+        <div class="chat-placeholder" id="chat-placeholder">Start a conversation...</div>
+      </div>
+      <div class="chat-input" id="chat-input-container">
+        <input type="text" id="chat-input" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+    <div class="graph-container">
+      <div class="card" id="company-prices">
+        <h3>Company Prices</h3>
+        <canvas id="prices-chart"></canvas>
+        <div class="loading" id="prices-loading">
+          <div class="dot-flashing"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="news-summary-modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('news-summary-modal')">&times;</span>
+      <h3>Weekly News Summary</h3>
+      <div id="company-news-summary-result-modal" class="markdown-content">Loading...</div>
+      <div class="loading" id="news-summary-loading">
+        <div class="dot-flashing"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="analyst-recommendation-modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('analyst-recommendation-modal')">&times;</span>
+      <h3>Analyst Recommendation</h3>
+      <div id="analyst-recommendation-result-modal" class="markdown-content">Loading...</div>
+      <div class="loading" id="analyst-recommendation-loading">
+        <div class="dot-flashing"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const apiUrl = 'http://localhost:8000/stocks'; // Update this with your backend URL
+
+    function navigate(page) {
+      alert(`Navigating to ${page} page...`); // Replace with actual navigation logic
+    }
+
+    function toggleChatContainer() {
+      const ticker = document.getElementById('ticker-input').value;
+      const chatContainer = document.getElementById('chat-container');
+      const chatInputContainer = document.getElementById('chat-input-container');
+      if (ticker) {
+        chatContainer.style.display = 'block';
+        chatInputContainer.style.display = 'flex';
+      } else {
+        chatContainer.style.display = 'none';
+        chatInputContainer.style.display = 'none';
+      }
+    }
+
+    function openModal(modalId) {
+      document.getElementById(modalId).style.display = "block";
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = "none";
+    }
+
+    async function fetchStockData() {
+      const ticker = document.getElementById('ticker-input').value;
+      if (!ticker) {
+        alert('Please enter a ticker symbol');
+        return;
+      }
+
+      const endpoints = [
+        { id: 'chat-completion', url: `${apiUrl}/insights/`, body: { prompt: ticker }, loader: 'chat-completion-loading' },
+        { id: 'company-prices', url: `${apiUrl}/company_prices/`, body: { ticker }, loader: 'prices-loading' },
+        { id: 'company-news-summary-result-modal', url: `${apiUrl}/company_news_summary/`, body: { ticker }, loader: 'news-summary-loading' },
+        { id: 'analyst-recommendation-result-modal', url: `${apiUrl}/company_investment_recommendation/`, body: { ticker }, loader: 'analyst-recommendation-loading' }
+      ];
+
+      const requests = endpoints.map(endpoint => fetchData(endpoint.id, endpoint.url, endpoint.body, endpoint.loader));
+
+      await Promise.all(requests);
+    }
+
+    async function fetchData(id, url, body, loaderId) {
+      if (id !== 'company-prices' && id !== 'company-news-summary-result-modal' && id !== 'analyst-recommendation-result-modal') {
+        document.getElementById(`${id}-result`).innerHTML = '';
+      }
+
+      document.getElementById(loaderId).style.display = 'flex';
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+        const result = await response.json();
+
+        switch(id) {
+          case 'chat-completion':
+            document.getElementById(`${id}-result`).innerHTML = marked.parse(result.answer || 'No data available');
+            break;
+          case 'company-prices':
+            renderPriceChart(result.timestamps, result.prices);
+            break;
+          case 'company-news-summary-result-modal':
+            document.getElementById(id).innerHTML = marked.parse(result.news_summary || 'No data available');
+            break;
+          case 'analyst-recommendation-result-modal':
+            document.getElementById(id).innerHTML = marked.parse(result.recommendation || 'No data available');
+            break;
+          default:
+            document.getElementById(`${id}-result`).innerHTML = marked.parse(JSON.stringify(result, null, 2));
+        }
+      } catch (error) {
+        document.getElementById(`${id}-result`).innerHTML = `Error: ${error.message}`;
+      } finally {
+        document.getElementById(loaderId).style.display = 'none';
+      }
+    }
+
+    function renderPriceChart(timestamps, prices) {
+      const ctx = document.getElementById('prices-chart').getContext('2d');
+      const formattedTimestamps = timestamps.map(ts => new Date(ts * 1000).toLocaleDateString());
+
+      if (window.pricesChart) {
+        window.pricesChart.destroy();
+      }
+
+      window.pricesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: formattedTimestamps,
+          datasets: [{
+            label: 'Stock Price',
+            data: prices,
+            borderColor: '#00509E',
+            backgroundColor: 'rgba(0, 80, 158, 0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            x: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Date',
+                color: '#00509E'
+              },
+              ticks: {
+                maxTicksLimit: 10 // Adjust this value as needed
+              }
+            },
+            y: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Price',
+                color: '#00509E'
+              },
+              beginAtZero: false
+            }
+          }
+        }
+      });
+    }
+
+    function sendMessage() {
+      const inputElement = document.getElementById('chat-input');
+      const message = inputElement.value;
+      const ticker = document.getElementById('ticker-input').value;
+      if (!message || !ticker) return;
+
+      // Add user message to chat
+      addMessageToChat(message, 'user-message');
+
+      // Clear input
+      inputElement.value = '';
+
+      // Add preloader for bot response
+      const loaderId = 'chat-container';
+      addMessageToChat('<div class="dot-flashing"></div>', 'bot-message');
+
+      // Send user message to backend
+      fetch(`${apiUrl}/knowledge_base/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: message, ticker: ticker }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Remove preloader
+        removePreloader(loaderId);
+
+        // Add bot response to chat
+        addMessageToChat(data.knowledge_base || 'No data available', 'bot-message');
+      })
+      .catch(error => {
+        // Remove preloader
+        removePreloader(loaderId);
+
+        addMessageToChat(`Error: ${error.message}`, 'bot-message');
+      });
+    }
+
+    function addMessageToChat(message, className) {
+      const chatContainer = document.getElementById('chat-container');
+      const placeholder = document.getElementById('chat-placeholder');
+      if (placeholder) {
+        placeholder.remove();
+      }
+      const messageElement = document.createElement('div');
+      messageElement.className = `message ${className}`;
+      messageElement.innerHTML = marked.parse(message);
+      chatContainer.appendChild(messageElement);
+
+      // Scroll to the bottom of the chat container
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function removePreloader(loaderId) {
+      const chatContainer = document.getElementById(loaderId);
+      const preloader = chatContainer.querySelector('.bot-message .dot-flashing');
+      if (preloader) {
+        preloader.parentElement.remove();
+      }
+    }
+  </script>
+</body>
+</html>

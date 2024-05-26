@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python3 midas_touch/manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db  # Correctly point to the PostgreSQL service
+      - DB_NAME=mydatabase
+      - DB_USER=myuser
+      - DB_PASS=mypassword
+
+  web:
+    build: ./frontend
+    ports:
+      - "8080:80"
+
+volumes:
+  postgres_data:
