@@ -15,6 +15,19 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+def load_env():
+    env_file = BASE_DIR / '.env'
+    if env_file.exists():
+        with open(env_file) as f:
+            for line in f:
+                if line.startswith('#') or '=' not in line:
+                    continue
+                key, value = line.strip().split('=', 1)
+                os.environ[key] = value
+
+# Load environment variables from the .env file
+load_env()
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
